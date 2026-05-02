@@ -41,12 +41,23 @@ model User {
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
+  restorePasswords RestorePassword?
   addresses  Address[]
   orders     Order[]
   wishlists  Wishlist[]
   cartItems  CartItem[]
 
   @@map("users")
+}
+
+model RestorePassword {
+  id            String   @id @default(uuid()) @db.Uuid
+  token         String   @unique
+  expireAt      DateTime @map("expire_at")
+  userId        String   @map("user_id")@unique @db.Uuid
+  user          User     @relation(fields: [userId], references: [id])
+
+  @@map("restore_passwords")
 }
 
 model Address {
