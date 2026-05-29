@@ -2,9 +2,12 @@ import { Module } from '@nestjs/common';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module.js';
 import { ConfigModule } from '@nestjs/config';
+import { UserModule } from './user/user.module.js';
+import { PrismaModule } from './prisma/prisma.module.js';
 
 @Module({
   imports: [
+    PrismaModule,
     ConfigModule.forRoot({
       isGlobal: true,
       cache: true,
@@ -27,6 +30,7 @@ import { ConfigModule } from '@nestjs/config';
       },
     ]),
     AuthModule,
+    UserModule,
   ],
   controllers: [],
   providers: [],
