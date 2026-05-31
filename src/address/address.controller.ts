@@ -89,10 +89,11 @@ export class AddressController {
     @Req() req: Request & { user: { id: string } },
   ) {
     const userId = req.user.id;
-    await this.addressService.remove(id, userId);
+    const status = await this.addressService.remove(id, userId);
 
     return {
       message: 'Address deleted successfully.',
+      ...status,
     };
   }
 }
