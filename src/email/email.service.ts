@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Resend } from 'resend';
 import { registerTemplate } from './templates/registerTemplate.js';
 import { forgotPasswordTemplate } from './templates/forgotPasswordTemplate.js';
@@ -39,14 +39,22 @@ export class EmailService {
       });
 
       if (error) {
-        console.error('Resend Error:', error);
-        throw new InternalServerErrorException('Failed to send email');
+        console.error(
+          `[EmailService] Resend API Error sending to ${to}:`,
+          error,
+        );
+        return { success: false, error };
       }
 
-      return data;
+      return { success: true, data };
     } catch (err: any) {
-      console.error('Mailer Error:', err);
-      throw new InternalServerErrorException('Email service unavailable');
+      console.error(
+        `[EmailService] Network/Provider Error sending to ${to}:`,
+        err,
+      );
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+      return { success: false, error: err.message };
     }
   }
 
