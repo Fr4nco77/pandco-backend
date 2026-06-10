@@ -4,7 +4,15 @@ import { AuthModule } from './auth/auth.module.js';
 import { ConfigModule } from '@nestjs/config';
 import { UserModule } from './user/user.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
+import { ProductModule } from './product/product.module.js';
 import { AddressModule } from './address/address.module.js';
+import { WishlistModule } from './wishlist/wishlist.module.js';
+import { CartModule } from './cart/cart.module.js';
+import { OrderModule } from './order/order.module.js';
+import { CollectionModule } from './collection/collection.module.js';
+import { TypeModule } from './type/type.module.js';
+import { ProductVariantModule } from './product-variant/product-variant.module.js';
+import { ProductImageModule } from './product-image/product-image.module.js';
 
 @Module({
   imports: [
@@ -32,7 +40,15 @@ import { AddressModule } from './address/address.module.js';
     ]),
     AuthModule,
     UserModule,
+    ProductModule,
     AddressModule,
+    WishlistModule,
+    CartModule,
+    OrderModule,
+    CollectionModule,
+    TypeModule,
+    ProductVariantModule,
+    ProductImageModule,
   ],
   controllers: [],
   providers: [],
