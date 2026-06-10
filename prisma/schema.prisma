@@ -19,7 +19,7 @@ enum Role {
 
 enum ProductCategory {
   MENS
-  WOMANS
+  WOMENS
   GOODS
 }
 
@@ -83,6 +83,7 @@ model Address {
 model Collection {
   id          String    @id @default(uuid()) @db.Uuid
   name        String
+  slug        String    @unique
   description String?
   products    Product[]
 
@@ -92,6 +93,7 @@ model Collection {
 model Type {
   id          String    @id @default(uuid()) @db.Uuid
   name        String
+  slug        String    @unique
   description String?
   products    Product[]
 
@@ -101,11 +103,14 @@ model Type {
 model Product {
   id            String          @id @default(uuid()) @db.Uuid
   name          String          @db.VarChar(255)
+  slug        String    @unique
   description   String
   basePrice     Decimal         @map("base_price") @db.Decimal(10, 2)
   discountPrice Decimal?        @map("discount_price") @db.Decimal(10, 2)
   category      ProductCategory
+  tags          String[]
   specs         String[]
+  salesCount    Int             @default(0) @map("sales_count")
   collectionId  String?         @map("collection_id") @db.Uuid
   typeId        String          @map("type_id") @db.Uuid
   createdAt     DateTime        @default(now()) @map("created_at")
