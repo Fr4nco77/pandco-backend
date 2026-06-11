@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { StripeService } from '../stripe/stripe.service.js';
 import { EmailService } from '../email/email.service.js';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class OrderService {
@@ -15,6 +16,7 @@ export class OrderService {
     private readonly prisma: PrismaService,
     private readonly stripe: StripeService,
     private readonly emailService: EmailService,
+    private readonly configService: ConfigService,
   ) {}
 
   async createOrder(userId: string) {
@@ -105,8 +107,14 @@ export class OrderService {
       const stripeSession = await this.stripe.client.checkout.sessions.create({
         payment_method_types: ['card'],
         mode: 'payment',
-        success_url: `${process.env.FRONTEND_URL}/checkout/success?orderId=${newOrder.id}`,
-        cancel_url: `${process.env.FRONTEND_URL}/checkout/cancel`,
+        success_url: `${this.configService.get<string>(
+          'FRONTEND',
+          'http://localhost:3001',
+        )}/checkout/success?orderId=${newOrder.id}`,
+        cancel_url: `${this.configService.get<string>(
+          'FRONTEND',
+          'http://localhost:3001',
+        )}/checkout/cancel`,
         metadata: {
           orderId: newOrder.id,
           userId: userId,
