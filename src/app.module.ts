@@ -14,6 +14,7 @@ import { TypeModule } from './type/type.module.js';
 import { ProductVariantModule } from './product-variant/product-variant.module.js';
 import { ProductImageModule } from './product-image/product-image.module.js';
 import { CacheModule } from '@nestjs/cache-manager';
+import { validate } from './env.validation.js';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { CacheModule } from '@nestjs/cache-manager';
     ConfigModule.forRoot({
       isGlobal: true,
       cache: true,
+      validate,
     }),
     ThrottlerModule.forRoot([
       {
