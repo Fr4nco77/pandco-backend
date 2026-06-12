@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
   PreconditionFailedException,
@@ -8,10 +9,14 @@ import { CreateCollectionDto } from './dto/create-collection.dto.js';
 import { UpdateCollectionDto } from './dto/update-collection.dto.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CollectionUpdateInput } from 'src/generated/prisma/models.js';
+import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
 
 @Injectable()
 export class CollectionService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+  ) {}
 
   async create(createCollectionDto: CreateCollectionDto) {
     const slug = this.generateSlug(createCollectionDto.name);
@@ -25,9 +30,14 @@ export class CollectionService {
       );
     }
 
-    return this.prisma.collection.create({
+    const newCollection = await this.prisma.collection.create({
       data: { ...createCollectionDto, slug },
     });
+
+    // Limpiamos la caché del listado general tras crear
+    await this.cacheManager.del('/collection');
+
+    return newCollection;
   }
 
   async findAll() {
@@ -59,10 +69,15 @@ export class CollectionService {
       updateData.slug = newSlug;
     }
 
-    return this.prisma.collection.update({
+    const updatedCollection = await this.prisma.collection.update({
       where: { id },
       data: updateData,
     });
+
+    // Limpiamos la caché del listado general tras actualizar
+    await this.cacheManager.del('/collection');
+
+    return updatedCollection;
   }
 
   async remove(id: string) {
@@ -80,6 +95,9 @@ export class CollectionService {
     }
 
     await this.prisma.collection.delete({ where: { id } });
+
+    // Limpiamos la caché del listado general tras borrar
+    await this.cacheManager.del('/collection');
   }
 
   private generateSlug(name: string): string {

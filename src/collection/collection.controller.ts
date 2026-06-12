@@ -8,12 +8,14 @@ import {
   Delete,
   UseGuards,
   ParseUUIDPipe,
+  UseInterceptors,
 } from '@nestjs/common';
 import { CollectionService } from './collection.service.js';
 import { CreateCollectionDto } from './dto/create-collection.dto.js';
 import { UpdateCollectionDto } from './dto/update-collection.dto.js';
 import { JwtAuthGuard } from '../auth/jwt.guard.js';
 import { AdminGuard } from '../common/guards/admin.guard.js';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 
 @Controller('collection')
 export class CollectionController {
@@ -30,6 +32,8 @@ export class CollectionController {
   }
 
   @Get()
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(1000 * 60 * 52)
   async findAll() {
     const collections = await this.collectionService.findAll();
     return {
