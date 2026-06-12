@@ -5,7 +5,9 @@ import cookieParser from 'cookie-parser';
 import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    rawBody: true, // Para verificar la firma de stripe en el correspondiente webhook
+  });
   app.enableCors({
     origin: process.env.FRONTEND,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
