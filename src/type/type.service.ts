@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
   PreconditionFailedException,
@@ -8,10 +9,14 @@ import { CreateTypeDto } from './dto/create-type.dto.js';
 import { UpdateTypeDto } from './dto/update-type.dto.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { TypeUpdateInput } from '../generated/prisma/models.js';
+import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
 
 @Injectable()
 export class TypeService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+  ) {}
 
   async create(createTypeDto: CreateTypeDto) {
     const slug = this.generateSlug(createTypeDto.name);
@@ -25,9 +30,13 @@ export class TypeService {
       );
     }
 
-    return this.prisma.type.create({
+    const newType = await this.prisma.type.create({
       data: { ...createTypeDto, slug },
     });
+
+    await this.cacheManager.del('/type');
+
+    return newType;
   }
 
   async findAll() {
@@ -56,10 +65,14 @@ export class TypeService {
       updateData.slug = newSlug;
     }
 
-    return this.prisma.type.update({
+    const updatedType = await this.prisma.type.update({
       where: { id },
       data: updateData,
     });
+
+    await this.cacheManager.del('/type');
+
+    return updatedType;
   }
 
   async remove(id: string) {
@@ -77,6 +90,8 @@ export class TypeService {
     }
 
     await this.prisma.type.delete({ where: { id } });
+
+    await this.cacheManager.del('/type');
   }
 
   private generateSlug(name: string): string {

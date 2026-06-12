@@ -8,12 +8,14 @@ import {
   Delete,
   UseGuards,
   ParseUUIDPipe,
+  UseInterceptors,
 } from '@nestjs/common';
 import { TypeService } from './type.service.js';
 import { CreateTypeDto } from './dto/create-type.dto.js';
 import { UpdateTypeDto } from './dto/update-type.dto.js';
 import { JwtAuthGuard } from '../auth/jwt.guard.js';
 import { AdminGuard } from '../common/guards/admin.guard.js';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 
 @Controller('type')
 export class TypeController {
@@ -30,6 +32,8 @@ export class TypeController {
   }
 
   @Get()
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(1000 * 60 * 44)
   async findAll() {
     const types = await this.typeService.findAll();
     return {
