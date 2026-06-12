@@ -6,7 +6,17 @@ import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.enableCors(); // Una vez terminado hay que restringir el origin y metodos
+  app.enableCors({
+    origin: process.env.FRONTEND,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'Accept',
+    ],
+  });
   app.use(helmet());
   app.use(cookieParser());
   app.useGlobalPipes(
