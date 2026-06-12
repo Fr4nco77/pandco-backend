@@ -8,6 +8,7 @@ import {
   Post,
   Query,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ProductService } from './product.service.js';
 import { CreateProductDto } from './dto/create-product.dto.js';
@@ -15,12 +16,15 @@ import { UpdateProductDto } from './dto/update-product.dto.js';
 import { FindAllProductsDto } from './dto/findAll-product.dto.js';
 import { JwtAuthGuard } from '../auth/jwt.guard.js';
 import { AdminGuard } from '../common/guards/admin.guard.js';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 
 @Controller('product')
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   @Get()
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(1000 * 60 * 5)
   async findAll(@Query() query: FindAllProductsDto) {
     const data = await this.productService.findAll(query);
 
@@ -31,6 +35,8 @@ export class ProductController {
   }
 
   @Get(':slug')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(1000 * 60 * 20)
   async findOne(@Param('slug') slug: string) {
     const product = await this.productService.findBySlug(slug);
 

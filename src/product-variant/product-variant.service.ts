@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
   PreconditionFailedException,
@@ -8,10 +9,14 @@ import { CreateProductVariantDto } from './dto/create-product-variant.dto.js';
 import { UpdateProductVariantDto } from './dto/update-product-variant.dto.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ProductVariantUpdateInput } from '../generated/prisma/models.js';
+import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
 
 @Injectable()
 export class ProductVariantService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+  ) {}
 
   async create(createDto: CreateProductVariantDto) {
     // 1. Validar que el producto padre exista
@@ -32,7 +37,18 @@ export class ProductVariantService {
       throw new ConflictException(`SKU "${createDto.sku}" is already in use.`);
     }
 
-    return this.prisma.productVariant.create({ data: createDto });
+    const newVariant = await this.prisma.productVariant.create({
+      data: createDto,
+    });
+
+    // 3. Limpieza de cache
+    await this.cacheManager.del('/product');
+    await this.cacheManager.del(`/product/${productExists.slug}`);
+    await this.cacheManager.del(
+      `/product-variant/product/${createDto.productId}`,
+    );
+
+    return newVariant;
   }
 
   async findByProduct(productId: string) {
@@ -45,6 +61,7 @@ export class ProductVariantService {
   async update(id: string, updateDto: UpdateProductVariantDto) {
     const variant = await this.prisma.productVariant.findUnique({
       where: { id },
+      include: { product: true },
     });
     if (!variant) throw new NotFoundException('Variant not found.');
 
@@ -62,10 +79,18 @@ export class ProductVariantService {
       updateData.sku = updateDto.sku;
     }
 
-    return this.prisma.productVariant.update({
+    const updatedVariant = await this.prisma.productVariant.update({
       where: { id },
       data: updateData,
     });
+
+    await this.cacheManager.del('/product');
+    await this.cacheManager.del(`/product/${variant.product.slug}`);
+    await this.cacheManager.del(
+      `/product-variant/product/${variant.productId}`,
+    );
+
+    return updatedVariant;
   }
 
   async remove(id: string) {
@@ -75,6 +100,7 @@ export class ProductVariantService {
         _count: {
           select: { orderItems: true }, // Revisamos si ya se vendió
         },
+        product: true,
       },
     });
 
@@ -88,5 +114,12 @@ export class ProductVariantService {
     }
 
     await this.prisma.productVariant.delete({ where: { id } });
+
+    // Limpieza de cache
+    await this.cacheManager.del('/product');
+    await this.cacheManager.del(`/product/${variant.product.slug}`);
+    await this.cacheManager.del(
+      `/product-variant/product/${variant.productId}`,
+    );
   }
 }

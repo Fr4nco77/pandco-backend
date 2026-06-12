@@ -8,12 +8,14 @@ import {
   Delete,
   UseGuards,
   ParseUUIDPipe,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ProductVariantService } from './product-variant.service.js';
 import { CreateProductVariantDto } from './dto/create-product-variant.dto.js';
 import { UpdateProductVariantDto } from './dto/update-product-variant.dto.js';
 import { JwtAuthGuard } from '../auth/jwt.guard.js';
 import { AdminGuard } from '../common/guards/admin.guard.js';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 
 @Controller('product-variant')
 export class ProductVariantController {
@@ -27,6 +29,8 @@ export class ProductVariantController {
   }
 
   @Get('product/:productId')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(1000 * 60 * 25)
   async findByProduct(@Param('productId', ParseUUIDPipe) productId: string) {
     const variants = await this.productVariantService.findByProduct(productId);
     return { message: 'Variants retrieved successfully.', data: variants };

@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -8,10 +9,14 @@ import { UpdateProductDto } from './dto/update-product.dto.js';
 import { FindAllProductsDto, SortOption } from './dto/findAll-product.dto.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { Prisma } from '../generated/prisma/client.js';
+import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 
 @Injectable()
 export class ProductService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+  ) {}
 
   async findAll(query: FindAllProductsDto) {
     const {
@@ -164,7 +169,7 @@ export class ProductService {
     }
 
     // 3. Insertar el nuevo producto en la base de datos
-    return this.prisma.product.create({
+    const newProduct = await this.prisma.product.create({
       data: {
         ...createProductDto,
         slug,
@@ -176,6 +181,11 @@ export class ProductService {
         variants: true,
       },
     });
+
+    // 4. Limpiar chache tras crear el producto
+    await this.cacheManager.del('/product');
+
+    return newProduct;
   }
 
   async update(id: string, updateProductDto: UpdateProductDto) {
@@ -216,7 +226,7 @@ export class ProductService {
     }
 
     // 4. Actualizar en la base de datos e incluir variantes e imágenes actualizadas
-    return this.prisma.product.update({
+    const updatedProduct = await this.prisma.product.update({
       where: { id },
       data: updateData,
       include: {
@@ -224,6 +234,16 @@ export class ProductService {
         variants: true,
       },
     });
+
+    // 5. Limpieza de Caché
+    await this.cacheManager.del('/product');
+    await this.cacheManager.del(`/product/${existingProduct.slug}`); // Rompe el detalle del slug viejo
+
+    if (updatedProduct.slug !== existingProduct.slug) {
+      await this.cacheManager.del(`/product/${updatedProduct.slug}`); // Rompe el nuevo slug por si acaso
+    }
+
+    return updatedProduct;
   }
 
   async softDelete(id: string) {
@@ -243,6 +263,9 @@ export class ProductService {
         deletedAt: new Date(),
       },
     });
+
+    await this.cacheManager.del('/product');
+    await this.cacheManager.del(`/product/${product.slug}`);
   }
 
   private createSlug(name: string) {
