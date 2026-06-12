@@ -13,6 +13,7 @@ import { CollectionModule } from './collection/collection.module.js';
 import { TypeModule } from './type/type.module.js';
 import { ProductVariantModule } from './product-variant/product-variant.module.js';
 import { ProductImageModule } from './product-image/product-image.module.js';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
@@ -38,6 +39,11 @@ import { ProductImageModule } from './product-image/product-image.module.js';
         limit: 100,
       },
     ]),
+    CacheModule.register({
+      isGlobal: true,
+      ttl: 1000 * 60 * 5, // 5 minutos por defecto
+      max: 100, // Máximo número de elementos en memoria para no saturar RAM
+    }),
     AuthModule,
     UserModule,
     ProductModule,
