@@ -35,10 +35,12 @@ export class AuthService {
       password: passwordHashed,
     });
 
-    await this.emailService.sendEmailRegister(
-      registerDto.email,
-      registerDto.firstName,
-    );
+    // Disparar el email  de bienvenida en segundo plano (Sin 'await')
+    this.emailService
+      .sendEmailRegister(registerDto.email, registerDto.firstName)
+      .catch((err) => {
+        console.error(`Failed to send register email:`, err);
+      });
 
     return {
       id: newUser.id,
